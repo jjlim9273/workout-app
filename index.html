@@ -763,22 +763,39 @@
 },[status]);
 
       useEffect(()=>{
+        let timerState = {started:0, pausedTime:0, lastTick:0};
         if(status==="active" && ex?.type==="timer"){
+          timerState.started = performance.now();
+          timerState.lastTick = performance.now();
           intervalRef.current = setInterval(()=>{
             if(pausedRef.current) return;
-            setTimeLeft(t => {
-              if(t<=3 && t>1) doBeep(sfx.count);
-              if(t<=1){clearInterval(intervalRef.current); doBeep(sfx.done); handleExerciseDone(); return 0;}
-              return t-1;
-            });
-          },1000);
+            const now = performance.now();
+            const elapsed = now - timerState.started;
+            const expectedSec = Math.floor(elapsed / 1000);
+            const currentSec = ex.value;
+            const newSec = Math.max(0, currentSec - expectedSec);
+            if(newSec !== timerState.lastTick){
+              timerState.lastTick = newSec;
+              if(newSec <= 3 && newSec > 0) doBeep(sfx.count);
+              if(newSec <= 0){clearInterval(intervalRef.current); doBeep(sfx.done); handleExerciseDone(); return;}
+              setTimeLeft(newSec);
+            }
+          },100);
         }
         if(status==="rest"){
+          timerState.started = performance.now();
+          timerState.lastTick = performance.now();
           intervalRef.current = setInterval(()=>{
             if(restPausedRef.current) return;
-            setRestTime(t => {
-              if(t<=3 && t>1) doBeep(sfx.count);
-              if(t<=1){
+            const now = performance.now();
+            const elapsed = now - timerState.started;
+            const expectedSec = Math.floor(elapsed / 1000);
+            const currentSec = restDuration;
+            const newSec = Math.max(0, currentSec - expectedSec);
+            if(newSec !== timerState.lastTick){
+              timerState.lastTick = newSec;
+              if(newSec <= 3 && newSec > 0) doBeep(sfx.count);
+              if(newSec <= 0){
                 clearInterval(intervalRef.current); doBeep(sfx.start);
                 const ni = currentIdx+1;
                 if(ni >= exercises.length){
@@ -789,14 +806,14 @@
                     return ns;
                   });
                 }else startExercise(ni);
-                return 0;
+                return;
               }
-              return t-1;
-            });
-          },1000);
+              setRestTime(newSec);
+            }
+          },100);
         }
         return()=>clearInterval(intervalRef.current);
-      },[status, currentIdx, ex, exercises.length, totalSets, doBeep, sfx]);
+      },[status, currentIdx, ex, exercises.length, totalSets, restDuration, doBeep, sfx]);
 
       useEffect(()=>{
         if(status==="done" && !savedRef.current){
