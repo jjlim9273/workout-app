@@ -123,17 +123,7 @@
       return {sfx, startBGM, stopBGM};
     }
 
-    function useAnim(period) {
-      const [t, setT] = useState(0);
-      useEffect(() => {
-        let raf;
-        const start = performance.now();
-        const tick = (now) => { setT(((now-start)%period)/period); raf=requestAnimationFrame(tick); };
-        raf = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(raf);
-      }, [period]);
-      return t;
-    }
+    function useAnim(period) { return 0; }
     const lerp = (a,b,t) => a+(b-a)*t;
     const eio = (t) => t<0.5?2*t*t:-1+(4-2*t)*t;
     const cl = (t,a,b) => Math.max(0,Math.min(1,(t-a)/(b-a)));
@@ -758,7 +748,10 @@
       useEffect(()=>{
         const fn = () => {
           if(document.hidden) {
+            totalPausedRef.current = true;
             pausedRef.current=true; restPausedRef.current=true;
+          }else{
+            totalPausedRef.current = pausedRef.current || restPausedRef.current;
           }
         };
         document.addEventListener("visibilitychange",fn);
