@@ -126,11 +126,17 @@
     function useAnim(period) {
       const [t, setT] = useState(0);
       useEffect(() => {
-        let raf;
-        const start = performance.now();
-        const tick = (now) => { setT(((now-start)%period)/period); raf=requestAnimationFrame(tick); };
-        raf = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(raf);
+        let frameId, lastFrame = 0, startTime = performance.now();
+        const tick = (now) => {
+          if (now - lastFrame > 32) {
+            lastFrame = now;
+            const elapsed = (now - startTime) % period;
+            setT(elapsed / period);
+          }
+          frameId = requestAnimationFrame(tick);
+        };
+        frameId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frameId);
       }, [period]);
       return t;
     }
@@ -287,45 +293,47 @@
     function ExerciseImage({exercise, th, showGuide=true}) {
       const imgUrl = `https://img.youtube.com/vi/${exercise.shortsId}/hqdefault.jpg`;
       const [guideOpen, setGuideOpen] = useState(true);
+      const toggleGuide = () => setGuideOpen(v=>!v);
       
-      if(showGuide) {
-        return html`
-        <div style=${{width:"100%",maxWidth:340}}>
-          <div style=${{position:"relative",borderRadius:14,overflow:"hidden",border:"1px solid "+th.borderSub}}>
-            <img src=${imgUrl} alt=${exercise.name} style=${{width:"100%",display:"block"}} onError=${e=>e.target.style.display="none"}/>
-            <button onClick=${()=>window.open(`https://youtube.com/shorts/${exercise.shortsId}`,"_blank")} style=${{position:"absolute",bottom:8,right:8,background:"rgba(255,0,0,0.9)",border:"none",borderRadius:8,padding:"6px 10px",cursor:"pointer",color:"white",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
-              <span>▶</span><span>쇼츠</span>
-            </button>
+      return html`
+      <div style=${{width:"100%",maxWidth:340}}>
+        <div style=${{position:"relative",borderRadius:14,overflow:"hidden",border:"1px solid "+th.borderSub}}>
+          <img src=${imgUrl} alt=${exercise.name} style=${{width:"100%",display:"block"}} onError=${e=>e.target.style.display="none"}/>
+          <button onClick=${()=>window.open(`https://youtube.com/shorts/${exercise.shortsId}`,"_blank")} style=${{position:"absolute",bottom:8,right:8,background:"rgba(255,0,0,0.9)",border:"none",borderRadius:8,padding:"6px 10px",cursor:"pointer",color:"white",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
+            <span>▶</span><span>쇼츠</span>
+          </button>
+        </div>
+        
+        <div style=${{marginTop:10,background:th.surface,borderRadius:12,border:"1px solid "+th.border,padding:"12px"}}>
+          <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,cursor:"pointer"}} onClick=${toggleGuide}>
+            <span style=${{fontSize:13,fontWeight:700,color:th.text}}>📋 자세 가이드</span>
+            <span style=${{color:th.textMute,fontSize:12}}>${guideOpen?"▲":"▼"}</span>
           </div>
           
-          <div style=${{marginTop:10,background:th.surface,borderRadius:12,border:"1px solid "+th.border,padding:"12px"}}>
-            <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,cursor:"pointer"}} onClick=${()=>setGuideOpen(v=>!v)}>
-              <span style=${{fontSize:13,fontWeight:700,color:th.text}}>📋 자세 가이드</span>
-              <span style=${{color:th.textMute,fontSize:12}}>${guideOpen?"▲":"▼"}</span>
-            </div>
-            
-            ${guideOpen && html`
-            <div style=${{fontSize:12,color:th.textSub,lineHeight:1.6,marginBottom:12}}>${exercise.guide.description}</div>
-            
-            <div style=${{marginBottom:10}}>
-              <div style=${{fontSize:11,fontWeight:700,color:"#FF6B35",marginBottom:6}}>✅ 핵심 포인트</div>
-              ${exercise.guide.keyPoints.map((p,i)=>html`<div key=${i} style=${{fontSize:11,color:th.textSub,marginBottom:4,paddingLeft:10}}>• ${p}</div>`)}
-            </div>
-            
-            <div style=${{marginBottom:10}}>
-              <div style=${{fontSize:11,fontWeight:700,color:"#FFE66D",marginBottom:6}}>⚠️ 주의사항</div>
-              ${exercise.guide.warning.map((w,i)=>html`<div key=${i} style=${{fontSize:11,color:th.textSub,marginBottom:4,paddingLeft:10}}>• ${w}</div>`)}
-            </div>
-            
-            <div>
-              <div style=${{fontSize:11,fontWeight:700,color:"#4ECDC4",marginBottom:6}}>💡 팁</div>
-              ${exercise.guide.tips.map((t,i)=>html`<div key=${i} style=${{fontSize:11,color:th.textSub,marginBottom:4,paddingLeft:10}}>• ${t}</div>`)}
-            </div>
-            `}
+          ${guideOpen && showGuide && html`
+          <div style=${{fontSize:12,color:th.textSub,lineHeight:1.6,marginBottom:12}}>${exercise.guide.description}</div>
+          
+          <div style=${{marginBottom:10}}>
+            <div style=${{fontSize:11,fontWeight:700,color:"#FF6B35",marginBottom:6}}>✅ 핵심 포인트</div>
+            ${exercise.guide.keyPoints.map((p,i)=>html`<div key=${i} style=${{fontSize:11,color:th.textSub,marginBottom:4,paddingLeft:10}}>• ${p}</div>`)}
           </div>
-        </div>`;
-      }
-      
+          
+          <div style=${{marginBottom:10}}>
+            <div style=${{fontSize:11,fontWeight:700,color:"#FFE66D",marginBottom:6}}>⚠️ 주의사항</div>
+            ${exercise.guide.warning.map((w,i)=>html`<div key=${i} style=${{fontSize:11,color:th.textSub,marginBottom:4,paddingLeft:10}}>• ${w}</div>`)}
+          </div>
+          
+          <div>
+            <div style=${{fontSize:11,fontWeight:700,color:"#4ECDC4",marginBottom:6}}>💡 팁</div>
+            ${exercise.guide.tips.map((t,i)=>html`<div key=${i} style=${{fontSize:11,color:th.textSub,marginBottom:4,paddingLeft:10}}>• ${t}</div>`)}
+          </div>
+          `}
+        </div>
+      </div>`;
+    }
+
+    function ExerciseImageCompact({exercise, th}) {
+      const imgUrl = `https://img.youtube.com/vi/${exercise.shortsId}/hqdefault.jpg`;
       return html`
       <div style=${{position:"relative",borderRadius:14,overflow:"hidden",border:"1px solid "+th.borderSub,maxWidth:200}}>
         <img src=${imgUrl} alt=${exercise.name} style=${{width:"100%",display:"block"}} onError=${e=>e.target.style.display="none"}/>
@@ -715,6 +723,7 @@
       const [restPaused, setRestPaused] = useState(false);
       const [completed, setCompleted] = useState([]);
       const [showAnim, setShowAnim] = useState(true);
+      const [showGuideIdx, setShowGuideIdx] = useState(null);
       const [totalElapsed, setTotalElapsed] = useState(0);
       const [soundOn, setSoundOn] = useState(true);
       const [bgmOn, setBgmOn] = useState(false);
@@ -972,11 +981,19 @@
                     <div style=${{fontWeight:700,fontSize:13,marginBottom:1,color:th.text}}>${e.name}</div>
                     <div style=${{fontSize:9,color:th.textMute,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>${e.effect}</div>
                   </div>
-                  <${SafeBtn} onClick=${()=>setShowAnim(v=>!v)} style=${{background:showAnim?e.color+"28":th.surface,border:"1px solid "+(showAnim?e.color+"55":th.border),borderRadius:8,padding:"5px 8px",color:showAnim?e.color:th.textMute,fontSize:10,flexShrink:0}}>${showAnim?"🤸":"👀"}</${SafeBtn}>
+                  <${SafeBtn} onClick=${()=>setShowGuideIdx(showGuideIdx===e.id?null:e.id)} style=${{background:showGuideIdx===e.id?e.color+"28":th.surface,border:"1px solid "+(showGuideIdx===e.id?e.color+"55":th.border),borderRadius:8,padding:"5px 8px",color:showGuideIdx===e.id?e.color:th.textMute,fontSize:10,flexShrink:0}}>${showGuideIdx===e.id?"📋":"👀"}</${SafeBtn}>
                   ${e.shortsId ? html`<button onClick=${()=>window.open(`https://youtube.com/shorts/${e.shortsId}`,"_blank")} style=${{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,width:40,height:36,flexShrink:0,background:e.color+"18",border:"1px solid "+e.color+"44",borderRadius:8,cursor:"pointer",color:e.color,padding:"4px 2px",WebkitTapHighlightColor:"transparent"}}><span style=${{fontSize:13}}>▶</span><span style=${{fontSize:6,fontFamily:"'Noto Sans KR',sans-serif",fontWeight:700,lineHeight:1}}>영상</span></button>` : ''}
                   <${Stepper} value=${e.value} min=${e.type==="timer"?5:1} max=${e.type==="timer"?180:60} onChange=${v=>{updateValue(e.id,v);setActivePreset(null);}} color=${e.color} th=${th}/>
                   <div style=${{fontSize:10,color:th.textMute,flexShrink:0}}>${e.unit}</div>
                 </div>
+                ${showGuideIdx===e.id && html`
+                <div style=${{padding:"0 12px 12px",borderTop:"1px solid "+th.borderSub,marginTop:2}}>
+                  <div style=${{fontSize:11,color:th.textSub,lineHeight:1.5,marginBottom:8,marginTop:8}}>${e.guide.description}</div>
+                  <div style=${{fontSize:10,color:"#FF6B35",marginBottom:4}}>✅ ${e.guide.keyPoints[0]}</div>
+                  <div style=${{fontSize:10,color:"#FFE66D",marginBottom:4}}>⚠️ ${e.guide.warning[0]}</div>
+                  <div style=${{fontSize:10,color:"#4ECDC4"}}>💡 ${e.guide.tips[0]}</div>
+                </div>
+                `}
               </div>
             `)}
           </div>
@@ -1001,10 +1018,23 @@
             </div>
             <${SafeBtn} onClick=${()=>setShowAnim(v=>!v)} style=${{background:showAnim?ex.color+"28":th.surface,border:"1px solid "+(showAnim?ex.color+"55":th.border),borderRadius:8,padding:"5px 9px",color:showAnim?ex.color:th.textMute,fontSize:11}}>${showAnim?"📋 가이드":"🤸 숨기기"}</${SafeBtn}>
           </div>
-          ${showAnim ? html`<${ExerciseImage} exercise=${ex} th=${th} showGuide=${true}/>` : html`<${ExerciseImage} exercise=${ex} th=${th} showGuide=${false}/>`}
+          ${showAnim && html`
+          <div style=${{display:"flex",gap:10,width:"100%",maxWidth:380,alignSelf:"center"}}>
+            <div style=${{flex:"0 0 120px",borderRadius:10,overflow:"hidden"}}>
+              <${ExerciseImageCompact} exercise=${ex} th=${th}/>
+            </div>
+            <div style=${{flex:1,background:th.surface,borderRadius:10,padding:"11px",fontSize:11,color:th.textSub}}>
+              <div style=${{marginBottom:5,fontWeight:700,color:th.text}}>📋 ${ex.name}</div>
+              <div style=${{marginBottom:5,lineHeight:1.4}}>${ex.guide.description}</div>
+              <div style=${{color:"#FF6B35",marginBottom:2}}>✅ ${ex.guide.keyPoints[0]}</div>
+              <div style=${{color:"#FFE66D",marginBottom:2}}>⚠️ ${ex.guide.warning[0]}</div>
+              <div style=${{color:"#4ECDC4"}}>💡 ${ex.guide.tips[0]}</div>
+            </div>
+          </div>
+          `}
           ${ex.type==="timer" ? html`<${TimerCircle} total=${ex.value} remaining=${timeLeft} paused=${paused} th=${th}/>` : html`<${RepCounter} total=${ex.value} current=${repCount} onTap=${handleRepTap} color=${ex.color} th=${th}/>`}
-          <div style=${RS}>
-            ${ex.type==="timer" && html`<${SafeBtn} onClick=${()=>setPaused(p=>!p)} style=${{flex:1,padding:"13px",background:paused?"rgba(255,255,255,0.14)":th.surface,border:"1px solid "+th.border,borderRadius:12,color:th.text,fontSize:14}}>${paused?"▶ 재개":"⏸ 일시정지"}</${SafeBtn}>`}
+          <div style=${{display:"flex",gap:8,width:"100%",maxWidth:340}}>
+            ${ex.type==="timer" && html`<${SafeBtn} onClick=${()=>setPaused(p=>!p)} style=${{flex:1,padding:"13px",background:paused?"rgba(255,255,255,0.14)":th.surface,border:"1px solid "+th.border,borderRadius:12,color:th.text,fontSize:14}}>▶ 재개</${SafeBtn}>`}
             ${ex.type==="reps" && html`<${SafeBtn} onClick=${handleExerciseDone} style=${{flex:2,padding:"13px",background:th.surface,border:"1px solid "+th.border,borderRadius:12,color:th.text,fontSize:14}}>완료 ✓</${SafeBtn}>`}
             <${SafeBtn} onClick=${handleExerciseDone} style=${{flex:1,padding:"13px",background:"rgba(255,107,53,0.12)",border:"1px solid rgba(255,107,53,0.28)",borderRadius:12,color:"#FF6B35",fontSize:14}}>스킵 ⏭</${SafeBtn}>
           </div>
