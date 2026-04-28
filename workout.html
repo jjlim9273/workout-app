@@ -1023,7 +1023,7 @@ useEffect(()=>{
           `}
           ${ex.type==="timer" ? html`<${TimerCircle} total=${ex.value} remaining=${timeLeft} paused=${paused} th=${th}/>` : html`<${RepCounter} total=${ex.value} current=${repCount} onTap=${handleRepTap} color=${ex.color} th=${th}/>`}
           <div style=${{display:"flex",gap:8,width:"100%",maxWidth:340}}>
-            ${ex.type==="timer" && html`<${SafeBtn} onClick=${()=>setPaused(p=>!p)} style=${{flex:1,padding:"13px",background:paused?"rgba(255,255,255,0.14)":th.surface,border:"1px solid "+th.border,borderRadius:12,color:th.text,fontSize:14}}>${paused?"▶ 재개":"⏸ 일시정지"}</${SafeBtn}>`}
+            ${ex.type==="timer" && html`<${SafeBtn} onClick=${()=>setPaused(p=>{totalPausedRef.current = false; return !p;})} style=${{flex:1,padding:"13px",background:paused?"rgba(255,255,255,0.14)":th.surface,border:"1px solid "+th.border,borderRadius:12,color:th.text,fontSize:14}}>${paused?"▶ 재개":"⏸ 일시정지"}</${SafeBtn}>`}
             ${ex.type==="reps" && html`<${SafeBtn} onClick=${handleExerciseDone} style=${{flex:2,padding:"13px",background:th.surface,border:"1px solid "+th.border,borderRadius:12,color:th.text,fontSize:14}}>완료 ✓</${SafeBtn}>`}
             <${SafeBtn} onClick=${handleExerciseDone} style=${{flex:1,padding:"13px",background:"rgba(255,107,53,0.12)",border:"1px solid rgba(255,107,53,0.28)",borderRadius:12,color:"#FF6B35",fontSize:14}}>스킵 ⏭</${SafeBtn}>
           </div>
@@ -1044,7 +1044,7 @@ useEffect(()=>{
             <text x="50" y="60" text-anchor="middle" fill=${th.textMute} font-size="10" font-family="'Noto Sans KR',sans-serif">${restPaused?"일시정지":"초 휴식"}</text>
           </svg>`;})()}
           <div style=${RS}>
-            <${SafeBtn} onClick=${()=>setRestPaused(p=>!p)} style=${{flex:1,padding:"12px",borderRadius:12,background:restPaused?"rgba(255,255,255,0.14)":th.surface,border:"1px solid "+th.border,color:th.text,fontSize:13}}>${restPaused?"▶ 재개":"⏸ 멈추기"}</${SafeBtn}>
+            <${SafeBtn} onClick=${()=>setRestPaused(p=>{totalPausedRef.current = false; return !p;})} style=${{flex:1,padding:"12px",borderRadius:12,background:restPaused?"rgba(255,255,255,0.14)":th.surface,border:"1px solid "+th.border,color:th.text,fontSize:13}}>${restPaused?"▶ 재개":"⏸ 멈추기"}</${SafeBtn}>
             <${SafeBtn} onClick=${handleSkipRest} style=${{flex:1,padding:"12px",borderRadius:12,background:"rgba(78,205,196,0.12)",border:"1px solid rgba(78,205,196,0.3)",color:"#4ECDC4",fontSize:13}}>바로 시작 ⏭</${SafeBtn}>
           </div>
           ${currentIdx+1<exercises.length && exercises[currentIdx+1].shortsId && html`
