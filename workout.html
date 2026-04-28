@@ -764,52 +764,36 @@
 
       useEffect(()=>{
         if(status==="active" && ex?.type==="timer"){
-          let lastTime = performance.now();
           intervalRef.current = setInterval(()=>{
             if(pausedRef.current) return;
-            const now = performance.now();
-            const delta = now - lastTime;
-            if(delta >= 1000){
-              const secs = Math.floor(delta / 1000);
-              lastTime = now - (delta % 1000);
-              setTimeLeft(t => {
-                const newT = Math.max(0, t - secs);
-                if(newT <= 3 && t > 4) doBeep(sfx.count);
-                if(newT <= 1){clearInterval(intervalRef.current); doBeep(sfx.done); handleExerciseDone(); return 0;}
-                return newT;
-              });
-            }
-          },100);
+            setTimeLeft(t => {
+              if(t<=3 && t>1) doBeep(sfx.count);
+              if(t<=1){clearInterval(intervalRef.current); doBeep(sfx.done); handleExerciseDone(); return 0;}
+              return t-1;
+            });
+          },1000);
         }
         if(status==="rest"){
-          let lastTime = performance.now();
           intervalRef.current = setInterval(()=>{
             if(restPausedRef.current) return;
-            const now = performance.now();
-            const delta = now - lastTime;
-            if(delta >= 1000){
-              const secs = Math.floor(delta / 1000);
-              lastTime = now - (delta % 1000);
-              setRestTime(t => {
-                const newT = Math.max(0, t - secs);
-                if(newT <= 3 && t > 4) doBeep(sfx.count);
-                if(newT <= 1){
-                  clearInterval(intervalRef.current); doBeep(sfx.start);
-                  const ni = currentIdx+1;
-                  if(ni >= exercises.length){
-                    setCurrentSet(s => {
-                      const ns = s+1;
-                      if(ns > totalSets){ setStatus("done"); return s; }
-                      setTimeout(()=>startExercise(0),0);
-                      return ns;
-                    });
-                  }else startExercise(ni);
-                  return 0;
-                }
-                return newT;
-              });
-            }
-          },100);
+            setRestTime(t => {
+              if(t<=3 && t>1) doBeep(sfx.count);
+              if(t<=1){
+                clearInterval(intervalRef.current); doBeep(sfx.start);
+                const ni = currentIdx+1;
+                if(ni >= exercises.length){
+                  setCurrentSet(s => {
+                    const ns = s+1;
+                    if(ns > totalSets){ setStatus("done"); return s; }
+                    setTimeout(()=>startExercise(0),0);
+                    return ns;
+                  });
+                }else startExercise(ni);
+                return 0;
+              }
+              return t-1;
+            });
+          },1000);
         }
         return()=>clearInterval(intervalRef.current);
       },[status, currentIdx, ex, exercises.length, totalSets, doBeep, sfx]);
